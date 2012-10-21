@@ -2,10 +2,10 @@
 #define	ASMOTOR_MAIN_H
 
 struct sOptions {
-	ULONG endian;
 	char gbgfx[4];
 	char binary[2];
-	SLONG fillchar;		//      -1 == random
+	SLONG fillchar;
+	    //-1 == random
 };
 
 extern char *tzNewMacro;

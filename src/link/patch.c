@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "link/mylink.h"
@@ -10,20 +11,23 @@ SLONG rpnstack[256];
 SLONG rpnp;
 SLONG nPC;
 
-void rpnpush(SLONG i)
+void 
+rpnpush(SLONG i)
 {
 	rpnstack[rpnp++] = i;
 }
 
-SLONG rpnpop(void)
+SLONG 
+rpnpop(void)
 {
 	return (rpnstack[--rpnp]);
 }
 
-SLONG getsymvalue(SLONG symid)
+SLONG 
+getsymvalue(SLONG symid)
 {
 	switch (pCurrentSection->tSymbols[symid]->Type) {
-	case SYM_IMPORT:
+		case SYM_IMPORT:
 		return (sym_GetValue(pCurrentSection->tSymbols[symid]->pzName));
 		break;
 	case SYM_EXPORT:
@@ -31,39 +35,41 @@ SLONG getsymvalue(SLONG symid)
 		{
 			if (strcmp
 			    (pCurrentSection->tSymbols[symid]->pzName,
-			     "@") == 0) {
+				"@") == 0) {
 				return (nPC);
 			} else
 				return (pCurrentSection->tSymbols[symid]->
-					nOffset +
-					pCurrentSection->tSymbols[symid]->
-					pSection->nOrg);
+				    nOffset +
+				    pCurrentSection->tSymbols[symid]->
+				    pSection->nOrg);
 		}
 	default:
 		break;
 	}
-	fatalerror("*INTERNAL* UNKNOWN SYMBOL TYPE");
-	return (0);
+	fprintf(stderr, "*INTERNAL* UNKNOWN SYMBOL TYPE\n");
+	exit(1);
 }
 
-SLONG getsymbank(SLONG symid)
+SLONG 
+getsymbank(SLONG symid)
 {
 	switch (pCurrentSection->tSymbols[symid]->Type) {
-	case SYM_IMPORT:
+		case SYM_IMPORT:
 		return (sym_GetBank(pCurrentSection->tSymbols[symid]->pzName));
 		break;
 	case SYM_EXPORT:
 	case SYM_LOCAL:
 		return (pCurrentSection->tSymbols[symid]->pSection->nBank);
-		//return( pCurrentSection->nBank );
+		//return (pCurrentSection->nBank);
 	default:
 		break;
 	}
-	fatalerror("*INTERNAL* UNKNOWN SYMBOL TYPE");
-	return (0);
+	fprintf(stderr, "*INTERNAL* UNKNOWN SYMBOL TYPE\n");
+	exit(1);
 }
 
-SLONG calcrpn(struct sPatch * pPatch)
+SLONG 
+calcrpn(struct sPatch * pPatch)
 {
 	SLONG t, size;
 	UBYTE *rpn;
@@ -153,20 +159,20 @@ SLONG calcrpn(struct sPatch * pPatch)
 			t = rpnpop();
 			rpnpush(t & 0xFF);
 			if (t < 0 || (t > 0xFF && t < 0xFF00) || t > 0xFFFF) {
-				sprintf(temptext,
-					"%s(%ld) : Value must be in the HRAM area",
-					pPatch->pzFilename, pPatch->nLineNo);
-				fatalerror(temptext);
+				fprintf(stderr,
+				    "%s(%ld) : Value must be in the HRAM area\n",
+				    pPatch->pzFilename, pPatch->nLineNo);
+				exit(1);
 			}
 			break;
 		case RPN_PCEZP:
 			t = rpnpop();
 			rpnpush(t & 0xFF);
 			if (t < 0x2000 || t > 0x20FF) {
-				sprintf(temptext,
-					"%s(%ld) : Value must be in the ZP area",
-					pPatch->pzFilename, pPatch->nLineNo);
-				fatalerror(temptext);
+				fprintf(stderr,
+				    "%s(%ld) : Value must be in the ZP area\n",
+				    pPatch->pzFilename, pPatch->nLineNo);
+				exit(1);
 			}
 			break;
 		case RPN_CONST:
@@ -211,11 +217,11 @@ SLONG calcrpn(struct sPatch * pPatch)
 				high |= (*rpn++) << 24;
 				t = rpnpop();
 				if (t < low || t > high) {
-					sprintf(temptext,
-						"%s(%ld) : Value must be in the range [%ld;%ld]",
-						pPatch->pzFilename,
-						pPatch->nLineNo, low, high);
-					fatalerror(temptext);
+					fprintf(stderr,
+					    "%s(%ld) : Value must be in the range [%ld;%ld]\n",
+					    pPatch->pzFilename,
+					    pPatch->nLineNo, low, high);
+					exit(1);
 				}
 				rpnpush(t);
 				size -= 8;
@@ -226,7 +232,8 @@ SLONG calcrpn(struct sPatch * pPatch)
 	return (rpnpop());
 }
 
-void Patch(void)
+void 
+Patch(void)
 {
 	struct sSection *pSect;
 
@@ -248,11 +255,11 @@ void Patch(void)
 					pSect->pData[pPatch->nOffset] =
 					    (UBYTE) t;
 				} else {
-					sprintf(temptext,
-						"%s(%ld) : Value must be 8-bit\n",
-						pPatch->pzFilename,
-						pPatch->nLineNo);
-					fatalerror(temptext);
+					fprintf(stderr,
+					    "%s(%ld) : Value must be 8-bit\n",
+					    pPatch->pzFilename,
+					    pPatch->nLineNo);
+					exit(1);
 				}
 				break;
 			case PATCH_WORD_L:
@@ -263,21 +270,21 @@ void Patch(void)
 						pSect->pData[pPatch->nOffset] =
 						    t & 0xFF;
 						pSect->pData[pPatch->nOffset +
-							     1] =
+						    1] =
 						    (t >> 8) & 0xFF;
 					} else {
-						//      Assume big endian
-						pSect->pData[pPatch->nOffset] =
+						//Assume big endian
+						    pSect->pData[pPatch->nOffset] =
 						    (t >> 8) & 0xFF;
 						pSect->pData[pPatch->nOffset +
-							     1] = t & 0xFF;
+						    1] = t & 0xFF;
 					}
 				} else {
-					sprintf(temptext,
-						"%s(%ld) : Value must be 16-bit\n",
-						pPatch->pzFilename,
-						pPatch->nLineNo);
-					fatalerror(temptext);
+					fprintf(stderr,
+					    "%s(%ld) : Value must be 16-bit\n",
+					    pPatch->pzFilename,
+					    pPatch->nLineNo);
+					exit(1);
 				}
 				break;
 			case PATCH_LONG_L:

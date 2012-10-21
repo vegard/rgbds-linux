@@ -11,15 +11,11 @@
 
 #define	ASMOTOR
 
-#define	ASMOTOR_VERSION	"1.10-linux" LOCALVERSION
+#define	ASMOTOR_VERSION	"1.10-linux"
 
 #define	ASM_VERSION		"1.08c"
 #define	LINK_VERSION	"1.06c"
 #define	RGBFIX_VERSION	"1.02"
 #define	LIB_VERSION		"1.00"
-
-#ifdef	__GNUC__
-#define	strnicmp strncasecmp
-#endif
 
 #endif

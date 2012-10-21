@@ -1,8 +1,9 @@
 %{
+#include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "asm/symbol.h"
 #include "asm/asm.h"
@@ -45,12 +46,12 @@ ULONG	isWhiteSpace( char s )
 
 ULONG	isRept( char *s )
 {
-	return( (strnicmp(s,"REPT",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
+	return( (strncasecmp(s,"REPT",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
 }
 
 ULONG	isEndr( char *s )
 {
-	return( (strnicmp(s,"Endr",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
+	return( (strncasecmp(s,"Endr",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
 }
 
 void	copyrept( void )
@@ -122,12 +123,12 @@ void	copyrept( void )
 
 ULONG	isMacro( char *s )
 {
-	return( (strnicmp(s,"MACRO",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[5]) );
+	return( (strncasecmp(s,"MACRO",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[5]) );
 }
 
 ULONG	isEndm( char *s )
 {
-	return( (strnicmp(s,"Endm",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
+	return( (strncasecmp(s,"Endm",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
 }
 
 void	copymacro( void )
@@ -199,17 +200,17 @@ void	copymacro( void )
 
 ULONG	isIf( char *s )
 {
-	return( (strnicmp(s,"If",2)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[2]) );
+	return( (strncasecmp(s,"If",2)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[2]) );
 }
 
 ULONG	isElse( char *s )
 {
-	return( (strnicmp(s,"Else",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
+	return( (strncasecmp(s,"Else",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
 }
 
 ULONG	isEndc( char *s )
 {
-	return( (strnicmp(s,"Endc",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
+	return( (strncasecmp(s,"Endc",4)==0) && isWhiteSpace(*(s-1)) && isWhiteSpace(s[4]) );
 }
 
 void	if_skip_to_else( void )

@@ -47,6 +47,7 @@ macro			:	T_ID
 
 						if( !fstk_RunMacro($1) )
 						{
+							fprintf(stderr, "Macro '%s' not defined", $1);
 							yyerror( "No such macro" );
 						}
 					}
@@ -267,6 +268,7 @@ include			:	T_POP_INCLUDE string
 					{
 						if( !fstk_RunInclude($2) )
 						{
+							fprintf(stderr, "Could not open file '%s' : %s\n", $2, strerror(errno));
 							yyerror( "File not found" );
 						}
 					}
@@ -274,6 +276,10 @@ include			:	T_POP_INCLUDE string
 
 incbin			:	T_POP_INCBIN string
 					{ out_BinaryFile( $2 ); }
+				|	T_POP_INCBIN string ',' const ',' const
+					{
+						out_BinaryFileSlice( $2, $4, $6 );
+					}
 ;
 
 printt			:	T_POP_PRINTT string
@@ -380,7 +386,7 @@ const_16bit		:	relocconst
 						{
 							yyerror( "Expression must be 16-bit" );
 						}
-						$$=$1
+						$$=$1;
 					}
 ;
 

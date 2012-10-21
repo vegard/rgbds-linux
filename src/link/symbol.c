@@ -11,13 +11,15 @@
 struct ISymbol {
 	char *pzName;
 	SLONG nValue;
-	SLONG nBank;		//      -1=const
+	SLONG nBank;
+	    //-1 = const
 	struct ISymbol *pNext;
 };
 
 struct ISymbol *tHash[HASHSIZE];
 
-SLONG calchash(char *s)
+SLONG 
+calchash(char *s)
 {
 	SLONG r = 0;
 	while (*s)
@@ -26,14 +28,16 @@ SLONG calchash(char *s)
 	return (r % HASHSIZE);
 }
 
-void sym_Init(void)
+void 
+sym_Init(void)
 {
 	SLONG i;
 	for (i = 0; i < HASHSIZE; i += 1)
 		tHash[i] = NULL;
 }
 
-SLONG sym_GetValue(char *tzName)
+SLONG 
+sym_GetValue(char *tzName)
 {
 	if (strcmp(tzName, "@") == 0) {
 		return (nPC);
@@ -49,13 +53,13 @@ SLONG sym_GetValue(char *tzName)
 			}
 		}
 
-		sprintf(temptext, "Unknown symbol '%s'", tzName);
-		fatalerror(temptext);
-		return (0);
+		fprintf(stderr, "Unknown symbol '%s'\n", tzName);
+		exit(1);
 	}
 }
 
-SLONG sym_GetBank(char *tzName)
+SLONG 
+sym_GetBank(char *tzName)
 {
 	struct ISymbol **ppSym;
 
@@ -68,12 +72,12 @@ SLONG sym_GetBank(char *tzName)
 		}
 	}
 
-	sprintf(temptext, "Unknown symbol '%s'", tzName);
-	fatalerror(temptext);
-	return (0);
+	fprintf(stderr, "Unknown symbol '%s'\n", tzName);
+	exit(1);
 }
 
-void sym_CreateSymbol(char *tzName, SLONG nValue, SBYTE nBank)
+void 
+sym_CreateSymbol(char *tzName, SLONG nValue, SBYTE nBank)
 {
 	if (strcmp(tzName, "@") == 0)
 		return;
@@ -89,10 +93,10 @@ void sym_CreateSymbol(char *tzName, SLONG nValue, SBYTE nBank)
 			if (nBank == -1)
 				return;
 
-			sprintf(temptext,
-					"Symbol '%s' defined more than once\n",
-					tzName);
-			fatalerror(temptext);
+			fprintf(stderr,
+			    "Symbol '%s' defined more than once\n",
+			    tzName);
+			exit(1);
 		}
 	}
 

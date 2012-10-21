@@ -46,19 +46,6 @@ ULONG ulMacroReturnValue;
 #define STAT_isMacroArg		2
 #define STAT_isREPTBlock	3
 
-ULONG filesize(char *s)
-{
-	FILE *f;
-	ULONG size = 0;
-
-	if ((f = fopen(s, "rt")) != NULL) {
-		fseek(f, 0, SEEK_END);
-		size = ftell(f);
-		fclose(f);
-	}
-	return (size);
-}
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -66,7 +53,8 @@ ULONG filesize(char *s)
  *
  */
 
-void pushcontext(void)
+void 
+pushcontext(void)
 {
 	struct sContext **ppFileStack;
 
@@ -75,11 +63,11 @@ void pushcontext(void)
 		ppFileStack = &((*ppFileStack)->pNext);
 
 	if ((*ppFileStack =
-	     (struct sContext *)malloc(sizeof(struct sContext))) != NULL) {
+		(struct sContext *) malloc(sizeof(struct sContext))) != NULL) {
 		(*ppFileStack)->FlexHandle = CurrentFlexHandle;
 		(*ppFileStack)->pNext = NULL;
-		strcpy((char *)(*ppFileStack)->tzFileName,
-		       (char *)tzCurrentFileName);
+		strcpy((char *) (*ppFileStack)->tzFileName,
+		    (char *) tzCurrentFileName);
 		(*ppFileStack)->nLine = nLineNo;
 		switch ((*ppFileStack)->nStatus = nCurrentStatus) {
 		case STAT_isMacroArg:
@@ -103,7 +91,8 @@ void pushcontext(void)
 		fatalerror("No memory for context");
 }
 
-int popcontext(void)
+int 
+popcontext(void)
 {
 	struct sContext *pLastFile, **ppLastFile;
 
@@ -112,7 +101,7 @@ int popcontext(void)
 			yy_delete_buffer(CurrentFlexHandle);
 			CurrentFlexHandle =
 			    yy_scan_bytes(pCurrentREPTBlock,
-					  nCurrentREPTBlockSize);
+			    nCurrentREPTBlockSize);
 			yy_switch_to_buffer(CurrentFlexHandle);
 			sym_UseCurrentMacroArgs();
 			sym_SetMacroArgID(nMacroCount++);
@@ -120,7 +109,6 @@ int popcontext(void)
 			return (0);
 		}
 	}
-
 	if ((pLastFile = pFileStack) != NULL) {
 		ppLastFile = &pFileStack;
 		while (pLastFile->pNext) {
@@ -140,8 +128,8 @@ int popcontext(void)
 			nLineNo += 1;
 
 		CurrentFlexHandle = pLastFile->FlexHandle;
-		strcpy((char *)tzCurrentFileName,
-		       (char *)pLastFile->tzFileName);
+		strcpy((char *) tzCurrentFileName,
+		    (char *) pLastFile->tzFileName);
 		switch (nCurrentStatus = pLastFile->nStatus) {
 		case STAT_isMacroArg:
 		case STAT_isMacro:
@@ -167,11 +155,11 @@ int popcontext(void)
 		return (1);
 }
 
-int yywrap(void)
+int 
+yywrap(void)
 {
 	return (popcontext());
 }
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -179,7 +167,8 @@ int yywrap(void)
  *
  */
 
-void fstk_Dump(void)
+void 
+fstk_Dump(void)
 {
 	struct sContext *pLastFile;
 
@@ -192,7 +181,6 @@ void fstk_Dump(void)
 
 	printf("%s(%ld)", tzCurrentFileName, nLineNo);
 }
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -200,12 +188,14 @@ void fstk_Dump(void)
  *
  */
 
-void fstk_AddIncludePath(char *s)
+void 
+fstk_AddIncludePath(char *s)
 {
 	strcpy(IncludePaths[NextIncPath++], s);
 }
 
-void fstk_FindFile(char *s)
+void 
+fstk_FindFile(char *s)
 {
 	char t[_MAX_PATH + 1];
 	SLONG i = -1;
@@ -227,7 +217,6 @@ void fstk_FindFile(char *s)
 		}
 	}
 }
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -235,18 +224,17 @@ void fstk_FindFile(char *s)
  *
  */
 
-ULONG fstk_RunInclude(char *s)
+ULONG 
+fstk_RunInclude(char *tzFileName)
 {
 	FILE *f;
-	char tzFileName[_MAX_PATH + 1];
 
-	//printf( "INCLUDE: %s\n", s );
+	//printf("INCLUDE: %s\n", s);
 
-	strcpy(tzFileName, s);
 	fstk_FindFile(tzFileName);
-	//printf( "INCLUDING: %s\n", tzFileName );
+	//printf("INCLUDING: %s\n", tzFileName);
 
-	if ((f = fopen(tzFileName, "rt")) != NULL) {
+	if ((f = fopen(tzFileName, "r")) != NULL) {
 		pushcontext();
 		nLineNo = 1;
 		nCurrentStatus = STAT_isInclude;
@@ -255,16 +243,15 @@ ULONG fstk_RunInclude(char *s)
 		CurrentFlexHandle = yy_create_buffer(pCurrentFile);
 		yy_switch_to_buffer(CurrentFlexHandle);
 
-		//      Dirty hack to give the INCLUDE directive a linefeed
+		//Dirty hack to give the INCLUDE directive a linefeed
 
-		yyunput('\n');
+		    yyunput('\n');
 		nLineNo -= 1;
 
 		return (1);
 	} else
 		return (0);
 }
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -272,7 +259,8 @@ ULONG fstk_RunInclude(char *s)
  *
  */
 
-ULONG fstk_RunMacro(char *s)
+ULONG 
+fstk_RunMacro(char *s)
 {
 	struct sSymbol *sym;
 
@@ -286,13 +274,12 @@ ULONG fstk_RunMacro(char *s)
 		pCurrentMacro = sym;
 		CurrentFlexHandle =
 		    yy_scan_bytes(pCurrentMacro->pMacro,
-				  pCurrentMacro->ulMacroSize);
+		    pCurrentMacro->ulMacroSize);
 		yy_switch_to_buffer(CurrentFlexHandle);
 		return (1);
 	} else
 		return (0);
 }
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -300,7 +287,8 @@ ULONG fstk_RunMacro(char *s)
  *
  */
 
-void fstk_RunMacroArg(SLONG s)
+void 
+fstk_RunMacroArg(SLONG s)
 {
 	char *sym;
 
@@ -318,7 +306,6 @@ void fstk_RunMacroArg(SLONG s)
 	} else
 		fatalerror("No such macroargument");
 }
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -326,7 +313,8 @@ void fstk_RunMacroArg(SLONG s)
  *
  */
 
-void fstk_RunString(char *s)
+void 
+fstk_RunString(char *s)
 {
 	struct sSymbol *pSym;
 
@@ -340,7 +328,6 @@ void fstk_RunString(char *s)
 	} else
 		yyerror("No such string symbol");
 }
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -348,7 +335,8 @@ void fstk_RunString(char *s)
  *
  */
 
-void fstk_RunRept(ULONG count)
+void 
+fstk_RunRept(ULONG count)
 {
 	if (count) {
 		pushcontext();
@@ -364,7 +352,6 @@ void fstk_RunRept(ULONG count)
 		yy_switch_to_buffer(CurrentFlexHandle);
 	}
 }
-
 /*
  * RGBAsm - FSTACK.C (FileStack routines)
  *
@@ -372,7 +359,8 @@ void fstk_RunRept(ULONG count)
  *
  */
 
-ULONG fstk_Init(char *s)
+ULONG 
+fstk_Init(char *s)
 {
 	char tzFileName[_MAX_PATH + 1];
 
@@ -382,7 +370,7 @@ ULONG fstk_Init(char *s)
 	fstk_FindFile(tzFileName);
 
 	pFileStack = NULL;
-	if ((pCurrentFile = fopen(tzFileName, "rt")) != NULL) {
+	if ((pCurrentFile = fopen(tzFileName, "r")) != NULL) {
 		nMacroCount = 0;
 		nCurrentStatus = STAT_isInclude;
 		strcpy(tzCurrentFileName, tzFileName);

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "asmotor.h"
 
@@ -13,11 +14,6 @@
 #include "link/main.h"
 #include "link/library.h"
 
-//      Quick and dirty...but it works
-#ifdef __GNUC__
-#define strcmpi	strcasecmp
-#endif
-
 enum eBlockType {
 	BLOCK_COMMENT,
 	BLOCK_OBJECTS,
@@ -26,103 +22,23 @@ enum eBlockType {
 };
 
 SLONG options = 0;
-SLONG fillchar = -1;
-enum eOutputType outputtype = OUTPUT_GBROM;
-char temptext[1024];
+SLONG fillchar = 0;
 char smartlinkstartsymbol[256];
-
-/*
- * Print out an errormessage
- *
- */
-
-void fatalerror(char *s)
-{
-	printf("*ERROR* : %s\n", s);
-	exit(5);
-}
 
 /*
  * Print the usagescreen
  *
  */
 
-void PrintUsage(void)
+static void 
+usage(void)
 {
-	printf("xLink v" LINK_VERSION " (part of ASMotor " ASMOTOR_VERSION
-	       ")\n\n" "Usage: xlink [options] linkfile\n"
-	       "Options:\n\t-h\t\tThis text\n"
-	       "\t-m<mapfile>\tWrite a mapfile\n"
-	       "\t-n<symfile>\tWrite a NO$GMB compatible symfile\n"
-	       "\t-z<hx>\t\tSet the byte value (hex format) used for uninitialised\n"
-	       "\t\t\tdata (default is ? for random)\n"
-	       "\t-s<symbol>\tPerform smart linking starting with <symbol>\n"
-	       "\t-t\t\tOutput target\n" "\t\t-tg\tGameboy ROM image(default)\n"
-	       "\t\t-ts\tGameboy small mode (32kB)\n"
-	       "\t\t-tp\tPsion2 reloc module\n");
-	exit(0);
-}
+	printf("RGBLink v" LINK_VERSION " (part of ASMotor " ASMOTOR_VERSION
+	    ")\n\n");
+	printf("usage: rgblink [-t] [-l library] [-m mapfile] [-n symfile] [-o outfile]\n");
+	printf("\t    [-s symbol] [-z pad_value] objectfile [...]\n");
 
-/*
- * Parse the linkfile and load all the objectfiles
- *
- */
-
-void ProcessLinkfile(char *tzLinkfile)
-{
-	FILE *pLinkfile;
-	enum eBlockType CurrentBlock = BLOCK_COMMENT;
-
-	pLinkfile = fopen(tzLinkfile, "rt");
-	if (!pLinkfile) {
-		sprintf(temptext, "Unable to find linkfile '%s'\n", tzLinkfile);
-		fatalerror(temptext);
-	}
-
-	while (!feof(pLinkfile)) {
-		char tzLine[256];
-
-		fscanf(pLinkfile, "%s\n", tzLine);
-		if (tzLine[0] != '#') {
-			if (tzLine[0] == '['
-					&& tzLine[strlen(tzLine) - 1] == ']') {
-				if (strcmpi("[objects]", tzLine) == 0)
-					CurrentBlock = BLOCK_OBJECTS;
-				else if (strcmpi("[output]", tzLine) ==
-						0)
-					CurrentBlock = BLOCK_OUTPUT;
-				else if (strcmpi("[libraries]", tzLine)
-						== 0)
-					CurrentBlock = BLOCK_LIBRARIES;
-				else if (strcmpi("[comment]", tzLine) ==
-						0)
-					CurrentBlock = BLOCK_COMMENT;
-				else {
-					fclose(pLinkfile);
-					sprintf(temptext,
-							"Unknown block '%s'\n",
-							tzLine);
-					fatalerror(temptext);
-				}
-			} else {
-				switch (CurrentBlock) {
-					case BLOCK_COMMENT:
-						break;
-					case BLOCK_OBJECTS:
-						obj_Readfile(tzLine);
-						break;
-					case BLOCK_LIBRARIES:
-						lib_Readfile(tzLine);
-						break;
-					case BLOCK_OUTPUT:
-						out_Setname(tzLine);
-						break;
-				}
-			}
-		}
-	}
-
-	fclose(pLinkfile);
+	exit(1);
 }
 
 /*
@@ -130,89 +46,67 @@ void ProcessLinkfile(char *tzLinkfile)
  *
  */
 
-int main(int argc, char *argv[])
+int 
+main(int argc, char *argv[])
 {
-	SLONG argn = 0;
+	int ch;
+	char *ep;
 
-	argc -= 1;
-	argn += 1;
+	if (argc == 1)
+		usage();
 
-	if (argc == 0)
-		PrintUsage();
-
-	while (*argv[argn] == '-') {
-		char opt;
-		argc -= 1;
-		switch (opt = argv[argn++][1]) {
-		case '?':
-		case 'h':
-			PrintUsage();
+	while ((ch = getopt(argc, argv, "l:m:n:o:p:s:t")) != -1) {
+		switch (ch) {
+		case 'l':
+			lib_Readfile(optarg);
 			break;
 		case 'm':
-			SetMapfileName(argv[argn - 1] + 2);
+			SetMapfileName(optarg);
 			break;
 		case 'n':
-			SetSymfileName(argv[argn - 1] + 2);
+			SetSymfileName(optarg);
 			break;
-		case 't':
-			switch (opt = argv[argn - 1][2]) {
-			case 'g':
-				outputtype = OUTPUT_GBROM;
-				break;
-			case 's':
-				outputtype = OUTPUT_GBROM;
-				options |= OPT_SMALL;
-				break;
-			case 'p':
-				outputtype = OUTPUT_PSION2;
-				break;
-			default:
-				sprintf(temptext, "Unknown option 't%c'\n",
-					opt);
-				fatalerror(temptext);
-				break;
+		case 'o':
+			out_Setname(optarg);
+			break;
+		case 'p':
+			fillchar = strtoul(optarg, &ep, 0);
+			if (optarg[0] == '\0' || *ep != '\0') {
+				fprintf(stderr, "Invalid argument for option 'p'\n");
+				exit(1);
 			}
-			break;
-		case 'z':
-			if (strlen(argv[argn - 1] + 2) <= 2) {
-				if (strcmp(argv[argn - 1] + 2, "?") == 0) {
-					fillchar = -1;
-				} else {
-					int result;
-
-					result =
-					    sscanf(argv[argn - 1] + 2, "%lx",
-						   &fillchar);
-					if (!((result == EOF) || (result == 1))) {
-						fatalerror
-						    ("Invalid argument for option 'z'\n");
-					}
-				}
-			} else {
-				fatalerror("Invalid argument for option 'z'\n");
+			if (fillchar < 0 || fillchar > 0xFF) {
+				fprintf(stderr, "Argument for option 'p' must be between 0 and 0xFF");
+				exit(1);
 			}
 			break;
 		case 's':
 			options |= OPT_SMART_C_LINK;
-			strcpy(smartlinkstartsymbol, argv[argn - 1] + 2);
+			strcpy(smartlinkstartsymbol, optarg);
+			break;
+		case 't':
+			options |= OPT_SMALL;
 			break;
 		default:
-			sprintf(temptext, "Unknown option '%c'\n", opt);
-			fatalerror(temptext);
-			break;
+			usage();
+			/* NOTREACHED */
 		}
 	}
+	argc -= optind;
+	argv += optind;
 
-	if (argc == 1) {
-		ProcessLinkfile(argv[argn++]);
-		AddNeededModules();
-		AssignSections();
-		CreateSymbolTable();
-		Patch();
-		Output();
-		CloseMapfile();
-	} else
-		PrintUsage();
+	if (argc == 0)
+		usage();
+
+	for (int i = 0; i < argc; ++i)
+		obj_Readfile(argv[i]);
+
+	AddNeededModules();
+	AssignSections();
+	CreateSymbolTable();
+	Patch();
+	Output();
+	CloseMapfile();
 
 	return (0);
 }

@@ -5,11 +5,12 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "asm/symbol.h"
 #include "asm/fstack.h"
@@ -56,97 +57,77 @@ struct sOptionStackEntry {
 
 struct sOptionStackEntry *pOptionStack = NULL;
 
-void opt_SetCurrentOptions(struct sOptions *pOpt)
+void 
+opt_SetCurrentOptions(struct sOptions * pOpt)
 {
 	if (nGBGfxID != -1) {
 		lex_FloatDeleteRange(nGBGfxID, CurrentOptions.gbgfx[0],
-				     CurrentOptions.gbgfx[0]);
+		    CurrentOptions.gbgfx[0]);
 		lex_FloatDeleteRange(nGBGfxID, CurrentOptions.gbgfx[1],
-				     CurrentOptions.gbgfx[1]);
+		    CurrentOptions.gbgfx[1]);
 		lex_FloatDeleteRange(nGBGfxID, CurrentOptions.gbgfx[2],
-				     CurrentOptions.gbgfx[2]);
+		    CurrentOptions.gbgfx[2]);
 		lex_FloatDeleteRange(nGBGfxID, CurrentOptions.gbgfx[3],
-				     CurrentOptions.gbgfx[3]);
+		    CurrentOptions.gbgfx[3]);
 		lex_FloatDeleteSecondRange(nGBGfxID, CurrentOptions.gbgfx[0],
-					   CurrentOptions.gbgfx[0]);
+		    CurrentOptions.gbgfx[0]);
 		lex_FloatDeleteSecondRange(nGBGfxID, CurrentOptions.gbgfx[1],
-					   CurrentOptions.gbgfx[1]);
+		    CurrentOptions.gbgfx[1]);
 		lex_FloatDeleteSecondRange(nGBGfxID, CurrentOptions.gbgfx[2],
-					   CurrentOptions.gbgfx[2]);
+		    CurrentOptions.gbgfx[2]);
 		lex_FloatDeleteSecondRange(nGBGfxID, CurrentOptions.gbgfx[3],
-					   CurrentOptions.gbgfx[3]);
+		    CurrentOptions.gbgfx[3]);
 	}
-
 	if (nBinaryID != -1) {
 		lex_FloatDeleteRange(nBinaryID, CurrentOptions.binary[0],
-				     CurrentOptions.binary[0]);
+		    CurrentOptions.binary[0]);
 		lex_FloatDeleteRange(nBinaryID, CurrentOptions.binary[1],
-				     CurrentOptions.binary[1]);
+		    CurrentOptions.binary[1]);
 		lex_FloatDeleteSecondRange(nBinaryID, CurrentOptions.binary[0],
-					   CurrentOptions.binary[0]);
+		    CurrentOptions.binary[0]);
 		lex_FloatDeleteSecondRange(nBinaryID, CurrentOptions.binary[1],
-					   CurrentOptions.binary[1]);
+		    CurrentOptions.binary[1]);
 	}
-
 	CurrentOptions = *pOpt;
 
 	if (nGBGfxID != -1) {
 		lex_FloatAddRange(nGBGfxID, CurrentOptions.gbgfx[0],
-				  CurrentOptions.gbgfx[0]);
+		    CurrentOptions.gbgfx[0]);
 		lex_FloatAddRange(nGBGfxID, CurrentOptions.gbgfx[1],
-				  CurrentOptions.gbgfx[1]);
+		    CurrentOptions.gbgfx[1]);
 		lex_FloatAddRange(nGBGfxID, CurrentOptions.gbgfx[2],
-				  CurrentOptions.gbgfx[2]);
+		    CurrentOptions.gbgfx[2]);
 		lex_FloatAddRange(nGBGfxID, CurrentOptions.gbgfx[3],
-				  CurrentOptions.gbgfx[3]);
+		    CurrentOptions.gbgfx[3]);
 		lex_FloatAddSecondRange(nGBGfxID, CurrentOptions.gbgfx[0],
-					CurrentOptions.gbgfx[0]);
+		    CurrentOptions.gbgfx[0]);
 		lex_FloatAddSecondRange(nGBGfxID, CurrentOptions.gbgfx[1],
-					CurrentOptions.gbgfx[1]);
+		    CurrentOptions.gbgfx[1]);
 		lex_FloatAddSecondRange(nGBGfxID, CurrentOptions.gbgfx[2],
-					CurrentOptions.gbgfx[2]);
+		    CurrentOptions.gbgfx[2]);
 		lex_FloatAddSecondRange(nGBGfxID, CurrentOptions.gbgfx[3],
-					CurrentOptions.gbgfx[3]);
+		    CurrentOptions.gbgfx[3]);
 	}
-
 	if (nBinaryID != -1) {
 		lex_FloatAddRange(nBinaryID, CurrentOptions.binary[0],
-				  CurrentOptions.binary[0]);
+		    CurrentOptions.binary[0]);
 		lex_FloatAddRange(nBinaryID, CurrentOptions.binary[1],
-				  CurrentOptions.binary[1]);
+		    CurrentOptions.binary[1]);
 		lex_FloatAddSecondRange(nBinaryID, CurrentOptions.binary[0],
-					CurrentOptions.binary[0]);
+		    CurrentOptions.binary[0]);
 		lex_FloatAddSecondRange(nBinaryID, CurrentOptions.binary[1],
-					CurrentOptions.binary[1]);
+		    CurrentOptions.binary[1]);
 	}
-
 }
 
-void opt_Parse(char *s)
+void 
+opt_Parse(char *s)
 {
 	struct sOptions newopt;
 
 	newopt = CurrentOptions;
 
 	switch (s[0]) {
-	case 'e':
-		switch (s[1]) {
-		case 'b':
-			newopt.endian = ASM_BIG_ENDIAN;
-			printf
-			    ("*WARNING*\t :\n\tEndianness forced to BIG for destination CPU\n");
-			break;
-		case 'l':
-			newopt.endian = ASM_LITTLE_ENDIAN;
-			printf
-			    ("*WARNING*\t :\n\tEndianness forced to LITTLE for destination CPU\n");
-			break;
-		default:
-			printf
-			    ("*ERROR*\t :\n\tArgument to option -e must be 'b' or 'l'\n");
-			exit(5);
-		}
-		break;
 	case 'g':
 		if (strlen(&s[1]) == 4) {
 			newopt.gbgfx[0] = s[1];
@@ -154,9 +135,9 @@ void opt_Parse(char *s)
 			newopt.gbgfx[2] = s[3];
 			newopt.gbgfx[3] = s[4];
 		} else {
-			printf
-			    ("*ERROR*\t :\n\tMust specify exactly 4 characters for option 'g'\n");
-			exit(5);
+			fprintf(stderr, "Must specify exactly 4 characters "
+			    "for option 'g'\n");
+			exit(1);
 		}
 		break;
 	case 'b':
@@ -164,29 +145,24 @@ void opt_Parse(char *s)
 			newopt.binary[0] = s[1];
 			newopt.binary[1] = s[2];
 		} else {
-			printf
-			    ("*ERROR*\t :\n\tMust specify exactly 2 characters for option 'b'\n");
-			exit(5);
+			fprintf(stderr, "Must specify exactly 2 characters "
+			    "for option 'b'\n");
+			exit(1);
 		}
 		break;
 	case 'z':
 		if (strlen(&s[1]) <= 2) {
-			if (strcmp(&s[1], "?") == 0) {
-				newopt.fillchar = -1;
-			} else {
-				int result;
+			int result;
 
-				result = sscanf(&s[1], "%lx", &newopt.fillchar);
-				if (!((result == EOF) || (result == 1))) {
-					printf
-					    ("*ERROR*\t :\n\tInvalid argument for option 'z'\n");
-					exit(5);
-				}
+			result = sscanf(&s[1], "%lx", &newopt.fillchar);
+			if (!((result == EOF) || (result == 1))) {
+				fprintf(stderr,
+				    "Invalid argument for option 'z'\n");
+				exit(1);
 			}
 		} else {
-			printf
-			    ("*ERROR*\t :\n\tInvalid argument for option 'z'\n");
-			exit(5);
+			fprintf(stderr, "Invalid argument for option 'z'\n");
+			exit(1);
 		}
 		break;
 	default:
@@ -197,13 +173,14 @@ void opt_Parse(char *s)
 	opt_SetCurrentOptions(&newopt);
 }
 
-void opt_Push(void)
+void 
+opt_Push(void)
 {
 	struct sOptionStackEntry *pOpt;
 
 	if ((pOpt =
-	     (struct sOptionStackEntry *)
-	     malloc(sizeof(struct sOptionStackEntry))) != NULL) {
+		(struct sOptionStackEntry *)
+		malloc(sizeof(struct sOptionStackEntry))) != NULL) {
 		pOpt->Options = CurrentOptions;
 		pOpt->pNext = pOptionStack;
 		pOptionStack = pOpt;
@@ -211,7 +188,8 @@ void opt_Push(void)
 		fatalerror("No memory for option stack");
 }
 
-void opt_Pop(void)
+void 
+opt_Pop(void)
 {
 	if (pOptionStack) {
 		struct sOptionStackEntry *pOpt;
@@ -223,7 +201,6 @@ void opt_Pop(void)
 	} else
 		fatalerror("No entries in the option stack");
 }
-
 /*
  * RGBAsm - MAIN.C
  *
@@ -231,7 +208,8 @@ void opt_Pop(void)
  *
  */
 
-void yyerror(char *s)
+void 
+yyerror(char *s)
 {
 	printf("*ERROR*\t");
 	fstk_Dump();
@@ -239,12 +217,12 @@ void yyerror(char *s)
 	nErrors += 1;
 }
 
-void fatalerror(char *s)
+void 
+fatalerror(char *s)
 {
 	yyerror(s);
 	exit(5);
 }
-
 /*
  * RGBAsm - MAIN.C
  *
@@ -252,27 +230,14 @@ void fatalerror(char *s)
  *
  */
 
-void PrintUsage(void)
+void 
+PrintUsage(void)
 {
-	printf(APPNAME " v" ASM_VERSION " (part of ASMotor " ASMOTOR_VERSION
-	       ")\n\nUsage: " EXENAME " [options] asmfile\n");
-	printf("Options:\n");
-	printf("\t-h\t\tThis text\n");
-	printf("\t-i<path>\tExtra include path\n");
-	printf("\t-o<file>\tWrite objectoutput to <file>\n");
-	printf("\t-e(l|b)\t\tChange endianness (CAUTION!)\n");
-	printf
-	    ("\t-g<ASCI>\tChange the four characters used for Gameboy graphics\n"
-	     "\t\t\tconstants (default is 0123)\n");
-	printf
-	    ("\t-b<AS>\t\tChange the two characters used for binary constants\n"
-	     "\t\t\t(default is 01)\n");
-	printf
-	    ("\t-z<hx>\t\tSet the byte value (hex format) used for uninitialised\n"
-	     "\t\t\tdata (default is ? for random)\n");
-	exit(0);
+	printf("RGBAsm v" ASM_VERSION " (part of ASMotor " ASMOTOR_VERSION
+	    ")\n\n");
+	printf("Usage: rgbasm [-b chars] [-g chars] [-i path] [-o outfile] [-p pad_value] file\n");
+	exit(1);
 }
-
 /*
  * RGBAsm - MAIN.C
  *
@@ -280,60 +245,88 @@ void PrintUsage(void)
  *
  */
 
-int main(int argc, char *argv[])
+int 
+main(int argc, char *argv[])
 {
+	int ch;
+	char *ep;
+
+	struct sOptions newopt;
+
 	char *tzMainfile;
-	int argn = 1;
 
-	argc -= 1;
-
-	if (argc == 0)
+	if (argc == 1)
 		PrintUsage();
 
 	/* yydebug=1; */
 
-	DefaultOptions.endian = ASM_DEFAULT_ENDIAN;
 	DefaultOptions.gbgfx[0] = '0';
 	DefaultOptions.gbgfx[1] = '1';
 	DefaultOptions.gbgfx[2] = '2';
 	DefaultOptions.gbgfx[3] = '3';
 	DefaultOptions.binary[0] = '0';
 	DefaultOptions.binary[1] = '1';
-	DefaultOptions.fillchar = -1;	//      fill uninitialised data with random values
+	DefaultOptions.fillchar = 0;
+
 	opt_SetCurrentOptions(&DefaultOptions);
 
-	while (argv[argn][0] == '-' && argc) {
-		switch (argv[argn][1]) {
-		case 'h':
-			PrintUsage();
+	newopt = CurrentOptions;
+
+	while ((ch = getopt(argc, argv, "b:g:i:o:p:")) != -1) {
+		switch (ch) {
+		case 'b':
+			if (strlen(optarg) == 2) {
+				newopt.binary[0] = optarg[1];
+				newopt.binary[1] = optarg[2];
+			} else {
+				fprintf(stderr, "Must specify exactly "
+				    "2 characters for option 'b'\n");
+				exit(1);
+			}
+		case 'g':
+			if (strlen(optarg) == 4) {
+				newopt.gbgfx[0] = optarg[1];
+				newopt.gbgfx[1] = optarg[2];
+				newopt.gbgfx[2] = optarg[3];
+				newopt.gbgfx[3] = optarg[4];
+			} else {
+				fprintf(stderr, "Must specify exactly "
+				    "4 characters for option 'g'\n");
+				exit(1);
+			}
 			break;
 		case 'i':
-			fstk_AddIncludePath(&(argv[argn][2]));
+			fstk_AddIncludePath(optarg);
 			break;
 		case 'o':
-			out_SetFileName(&(argv[argn][2]));
+			out_SetFileName(optarg);
 			break;
-		case 'e':
-		case 'g':
-		case 'b':
-		case 'z':
-			opt_Parse(&argv[argn][1]);
+		case 'p':
+			newopt.fillchar = strtoul(optarg, &ep, 0);
+			if (optarg[0] == '\0' || *ep != '\0') {
+				fprintf(stderr,
+				    "Invalid argument for option 'p'\n");
+				exit(1);
+			}
+			if (newopt.fillchar < 0 || newopt.fillchar > 0xFF) {
+				fprintf(stderr, "Argument for option 'p' "
+				    "must be between 0 and 0xFF\n");
+				exit(1);
+			}
 			break;
 		default:
-			printf("*ERROR*\t :\n\tUnknown option '%c'\n",
-			       argv[argn][1]);
-			exit(5);
-			break;
+			PrintUsage();
 		}
-		argn += 1;
-		argc -= 1;
 	}
+	argc -= optind;
+	argv += optind;
+
+	opt_SetCurrentOptions(&newopt);
 
 	DefaultOptions = CurrentOptions;
 
-	/*tzMainfile=argv[argn++];
-	 * argc-=1; */
-	tzMainfile = argv[argn];
+	/* tzMainfile=argv[argn++]; argc-=1; */
+	tzMainfile = argv[argc - 1];
 
 	setuplex();
 
@@ -375,37 +368,38 @@ int main(int argc, char *argv[])
 
 					nEndClock = clock();
 					timespent =
-					    ((double)(nEndClock - nStartClock))
-					    / (double)CLOCKS_PER_SEC;
+					    ((double) (nEndClock - nStartClock))
+					    / (double) CLOCKS_PER_SEC;
 					printf
 					    ("Success! %ld lines in %d.%02d seconds ",
-					     nTotalLines, (int)timespent,
-					     ((int)(timespent * 100.0)) % 100);
+					    nTotalLines, (int) timespent,
+					    ((int) (timespent * 100.0)) % 100);
 					if (timespent == 0)
 						printf
 						    ("(INFINITY lines/minute)\n");
 					else
 						printf("(%d lines/minute)\n",
-						       (int)(60 / timespent *
-							     nTotalLines));
+						    (int) (60 / timespent *
+							nTotalLines));
 					out_WriteObject();
 				} else {
 					printf
 					    ("Assembly aborted in pass 2 (%ld errors)!\n",
-					     nErrors);
+					    nErrors);
 					//sym_PrintSymbolTable();
 					exit(5);
 				}
 			} else {
-				printf
-				    ("*ERROR*\t:\tUnterminated IF construct (%ld levels)!\n",
-				     nIFDepth);
-				exit(5);
+				fprintf(stderr,
+				    "Unterminated IF construct (%ld levels)!\n",
+				    nIFDepth);
+				exit(1);
 			}
 		} else {
-			printf("Assembly aborted in pass 1 (%ld errors)!\n",
-			       nErrors);
-			exit(5);
+			fprintf(stderr,
+			    "Assembly aborted in pass 1 (%ld errors)!\n",
+			    nErrors);
+			exit(1);
 		}
 	} else {
 		printf("File '%s' not found\n", tzMainfile);
