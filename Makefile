@@ -34,6 +34,10 @@ xlink_obj := \
 rgbfix_obj := \
 	src/rgbfix/main.o
 
+asmy_artifacts := \
+	src/asm/asmy.h \
+	src/asm/asmy.y
+
 all: rgbasm xlib xlink rgbfix
 
 clean:
@@ -41,6 +45,7 @@ clean:
 	rm -rf xlib $(xlib_obj)
 	rm -rf xlink $(xlink_obj)
 	rm -rf rgbfix $(rgbfix_obj)
+	rm $(asmy_artifacts)
 
 rgbasm: $(rgbasm_obj)
 	gcc $(cflags) -o $@ $^ -lm
